@@ -72,14 +72,14 @@ namespace MapAssist.Settings
                 else
                 {
                     AreaMapColors[area] = new Dictionary<int, Color?>();
-                    foreach (int type in MapColors.Keys)
+                    foreach (int tile in MapColors.Keys)
                     {
-                        foreach(int value in areaHiddenTiles[area])
+                        foreach(int hiddenTile in areaHiddenTiles[area])
                         {
-                            if (!AreaMapColors[area].ContainsKey(type))
+                            if (!AreaMapColors[area].ContainsKey(tile))
                             {
-                                if (type == value) AreaMapColors[area][type] = null;
-                                else AreaMapColors[area][type] = MapColors[type];
+                                if (tile == hiddenTile) AreaMapColors[area][tile] = null;
+                                else AreaMapColors[area][tile] = MapColors[tile];
                             }
                         }
                     }
