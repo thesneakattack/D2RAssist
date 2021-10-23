@@ -60,14 +60,13 @@ namespace MapAssist.Settings
 
         public static void LoadAreaMapColors()
         {
-            Dictionary<int, Color?> DefaultMapColors = MapColors;
             Dictionary<Area, int[]> areaHiddenTiles = LoadHiddenTilesByArea();
             Area[] allAreas = Utils.GetAllAreas();
 
             foreach (Area area in allAreas)
             {
                 if (!areaHiddenTiles.ContainsKey(area)) {
-                    //duplicate Default Map Colors for areas not listed in areaHiddenTiles
+                    //set Areas not defined by LoadHiddenTilesByArea to Default colors.
                     AreaMapColors[area] = MapColors;
                 }
                 else
