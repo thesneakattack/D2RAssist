@@ -33,7 +33,7 @@ namespace MapAssist.Helpers
     {
         private static string processName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
         public static IntPtr? ProcessHandle = null;
-        public static bool foundcheck = false;
+        public static bool foundcheck = false; //jokerface fix
         public static IntPtr? SaveAddress = null; //jokerface fix
         public static IntPtr? CheckAddress = null; //jokerface fix
 
