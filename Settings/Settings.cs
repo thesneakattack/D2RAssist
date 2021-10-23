@@ -46,13 +46,74 @@ namespace MapAssist.Settings
     public static class Map
     {
         public static readonly Dictionary<int, Color?> MapColors = new Dictionary<int, Color?>();
-
+        public static readonly Dictionary<Area, Dictionary<int, Color?>> AreaMapColors = new Dictionary<Area, Dictionary<int, Color?>>();
         public static void InitMapColors()
         {
             for (var i = -1; i < 600; i++)
             {
                 LookupMapColor(i);
             }
+
+            LoadAreaMapColors();
+
+        }
+
+        public static void LoadAreaMapColors()
+        {
+            Dictionary<int, Color?> DefaultMapColors = MapColors;
+            Dictionary<Area, int[]> areaHiddenTiles = LoadHiddenTilesByArea();
+            Area[] allAreas = Utils.GetAllAreas();
+
+            foreach (Area area in allAreas)
+            {
+                if (!areaHiddenTiles.ContainsKey(area)) {
+                    //duplicate Default Map Colors for areas not listed in areaHiddenTiles
+                    AreaMapColors[area] = MapColors;
+                }
+                else
+                {
+                    AreaMapColors[area] = new Dictionary<int, Color?>();
+                    foreach (int type in MapColors.Keys)
+                    {
+                        foreach(int value in areaHiddenTiles[area])
+                        {
+                            if (!AreaMapColors[area].ContainsKey(type))
+                            {
+                                if (type == value) AreaMapColors[area][type] = null;
+                                else AreaMapColors[area][type] = MapColors[type];
+                            }
+                        }
+                    }
+                }
+            }
+
+
+        }
+
+        private static Dictionary<Area, int[]> LoadHiddenTilesByArea()
+        {
+            Dictionary<Area, int[]> HiddenTilesByArea = new Dictionary<Area,int[]>();
+            string[] areasToHide = Utils.GetMatchingKeys("HideMapTiles");
+
+            foreach (string areaToHide in areasToHide)
+            {
+                string substring = areaToHide.Substring(13, areaToHide.Length - 14);
+                if (Enum.TryParse(substring, true, out Area area))
+                {
+                    if (Enum.IsDefined(typeof(Area), area))
+                    {
+                        string key = "HideMapTiles[" + area.ToString() + "]";
+                        string hideMapTileValues = ConfigurationManager.AppSettings[key];
+                        if (!String.IsNullOrEmpty(hideMapTileValues))
+                        {
+                            int[] hideMapTilesArray = Utils.GetIntArray(hideMapTileValues);
+                            if (!HiddenTilesByArea.ContainsKey(area)) HiddenTilesByArea[area] = hideMapTilesArray;
+                        }
+
+                    }
+                }
+            }
+            return HiddenTilesByArea;
         }
 
         public static Color? LookupMapColor(int type)

@@ -141,7 +141,7 @@ namespace MapAssist.Helpers
                     for (var x = 0; x < areaData.CollisionGrid[y].Length; x++)
                     {
                         int type = areaData.CollisionGrid[y][x];
-                        Color? typeColor = Settings.Map.MapColors[type];
+                        Color? typeColor = Settings.Map.AreaMapColors[areaData.Area][type];
                         if (typeColor != null)
                         {
                             background.SetPixel(x, y, (Color)typeColor);
