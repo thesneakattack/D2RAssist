@@ -108,7 +108,6 @@ namespace MapAssist.Settings
                             int[] hideMapTilesArray = Utils.GetIntArray(hideMapTileValues);
                             if (!HiddenTilesByArea.ContainsKey(area)) HiddenTilesByArea[area] = hideMapTilesArray;
                         }
-
                     }
                 }
             }
