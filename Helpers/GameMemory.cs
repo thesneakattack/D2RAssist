@@ -1,4 +1,4 @@
-﻿/**
+/**
  *   Copyright (C) 2021 okaygo
  *
  *   https://github.com/misterokaygo/MapAssist/
@@ -59,6 +59,8 @@ namespace MapAssist.Helpers
                 IntPtr pPlayerUnit = IntPtr.Add(processAddress, Offsets.PlayerUnit);
 
                 var addressBuffer = new byte[8];
+                var addressBuffer1 = new byte[8];
+                var addressBuffer2 = new byte[8];
                 var dwordBuffer = new byte[4];
                 var byteBuffer = new byte[1];
 
@@ -99,6 +101,7 @@ namespace MapAssist.Helpers
 
                 var playerUnit = (IntPtr)SaveAddress;
                 var CheckUnit = (IntPtr)CheckAddress;
+
                 //jokerface fix end
 
                 WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, CheckUnit, addressBuffer, addressBuffer.Length, out _);
@@ -159,8 +162,8 @@ namespace MapAssist.Helpers
                 WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, pLevel, addressBuffer, addressBuffer.Length, out _);
                 var aLevel = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
 
-                if (addressBuffer.All(o => o == 0))
-                    return null;
+                //if (addressBuffer.All(o => o == 0))
+                //    return null;
 
                 IntPtr aLevelId = IntPtr.Add(aLevel, 0x1F8);
                 WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, aLevelId, dwordBuffer, dwordBuffer.Length, out _);
