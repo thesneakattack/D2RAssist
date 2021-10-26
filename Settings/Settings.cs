@@ -73,22 +73,14 @@ namespace MapAssist.Settings
                     AreaMapColors[area] = new Dictionary<int, Color?>();
                     foreach (int tile in MapColors.Keys) //Building AreaMapColors for these areas.
                     {
-                        if (!AreaMapColors[area].ContainsKey(tile)) // define a tile that hasn't yet been set;
+                        foreach (int hiddenTile in areaHiddenTiles[area]) // for an area with non-default tile mappings, loop through hiddenTile values as defined by App.config
                         {
-                            foreach (int hiddenTile in areaHiddenTiles[area]) // for an area with non-default tile mappings, loop through hiddenTile values as defined by App.config
+                            if (tile == hiddenTile) //if we have a match between a tile to be hidden and the tile in MapColors, which hasn't already been set, set it to null
                             {
-                                if (tile == hiddenTile) //if we have a match between a tile to be hidden and the tile in MapColors, which hasn't already been set, set it to null
-                                {
-                                    Console.WriteLine(area.ToString() + " : " + hiddenTile);
-                                    AreaMapColors[area][tile] = null;
-                                }
-                            }
-                            //after adding a null tile to AreaMapColors[area] matching the condition above, if AreaMapColors[area][tile] hasn't yet been set, then..
-                            if (!AreaMapColors[area].ContainsKey(tile))
-                            {
-                                AreaMapColors[area][tile] = MapColors[tile];
+                                if (!AreaMapColors[area].ContainsKey(tile)) AreaMapColors[area][tile] = null;
                             }
                         }
+                        if (!AreaMapColors[area].ContainsKey(tile)) AreaMapColors[area][tile] = MapColors[tile];
                     }
                 }
             }
