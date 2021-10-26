@@ -168,7 +168,6 @@ namespace MapAssist.Helpers
             }
         }
 
-
     [SuppressMessage("ReSharper", "InconsistentNaming")]
         private class MapApiSession
         {
