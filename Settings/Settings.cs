@@ -45,7 +45,7 @@ namespace MapAssist.Settings
 
     public static class Map
     {
-        public static readonly Dictionary<int, Color?> MapColors = new Dictionary<int, Color?>();
+        private static readonly Dictionary<int, Color?> MapColors = new Dictionary<int, Color?>();
         public static readonly Dictionary<Area, Dictionary<int, Color?>> AreaMapColors = new Dictionary<Area, Dictionary<int, Color?>>();
 
         public static void InitMapColors()
@@ -57,29 +57,36 @@ namespace MapAssist.Settings
             LoadAreaMapColors();
         }
 
-        public static void LoadAreaMapColors()
+        private static void LoadAreaMapColors()
         {
             Dictionary<Area, int[]> areaHiddenTiles = LoadHiddenTilesByArea();
             Area[] allAreas = Utils.GetAllAreas();
 
             foreach (Area area in allAreas)
             {
-                if (!areaHiddenTiles.ContainsKey(area))
+                if (!areaHiddenTiles.ContainsKey(area)) //set Areas not defined by LoadHiddenTilesByArea to Default colors.
                 {
-                    //set Areas not defined by LoadHiddenTilesByArea to Default colors.
                     AreaMapColors[area] = MapColors;
                 }
-                else
+                else //run condition for Areas defined by LoadHiddenTilesByArea
                 {
                     AreaMapColors[area] = new Dictionary<int, Color?>();
-                    foreach (int tile in MapColors.Keys)
+                    foreach (int tile in MapColors.Keys) //Building AreaMapColors for these areas.
                     {
-                        foreach (int hiddenTile in areaHiddenTiles[area])
+                        if (!AreaMapColors[area].ContainsKey(tile)) // define a tile that hasn't yet been set;
                         {
+                            foreach (int hiddenTile in areaHiddenTiles[area]) // for an area with non-default tile mappings, loop through hiddenTile values as defined by App.config
+                            {
+                                if (tile == hiddenTile) //if we have a match between a tile to be hidden and the tile in MapColors, which hasn't already been set, set it to null
+                                {
+                                    Console.WriteLine(area.ToString() + " : " + hiddenTile);
+                                    AreaMapColors[area][tile] = null;
+                                }
+                            }
+                            //after adding a null tile to AreaMapColors[area] matching the condition above, if AreaMapColors[area][tile] hasn't yet been set, then..
                             if (!AreaMapColors[area].ContainsKey(tile))
                             {
-                                if (tile == hiddenTile) AreaMapColors[area][tile] = null;
-                                else AreaMapColors[area][tile] = MapColors[tile];
+                                AreaMapColors[area][tile] = MapColors[tile];
                             }
                         }
                     }
