@@ -46,6 +46,7 @@ namespace MapAssist.Settings
     public static class Map
     {
         public static readonly Dictionary<int, Color?> MapColors = new Dictionary<int, Color?>();
+        public static readonly Dictionary<Area, Dictionary<int, Color?>> AreaMapColors = new Dictionary<Area, Dictionary<int, Color?>>();
 
         public static void InitMapColors()
         {
