@@ -40,6 +40,20 @@ namespace MapAssist.Settings
         {
             return Enum.GetValues(typeof(Area)).Cast<Area>().FirstOrDefault(area => area.Name() == name);
         }
+        public static Area[] GetAllAreas()
+        {
+            return Enum.GetValues(typeof(Area)).Cast<Area>().ToArray();
+        }
+
+        public static int[] GetIntArray(string value)
+        {
+            return value.Split(',').Select(o => int.Parse(o.Trim())).ToArray();
+        }
+
+        public static string[] GetMatchingKeys(string prefix)
+        {
+            return ConfigurationManager.AppSettings.AllKeys.Where(key => key.StartsWith(prefix)).ToArray();
+        }
 
         private static T GetConfigValue<T>(string key, Func<string, T> converter, T fallback = default)
         {
