@@ -1,4 +1,4 @@
-/**
+﻿/**
  *   Copyright (C) 2021 okaygo
  *
  *   https://github.com/misterokaygo/MapAssist/
@@ -33,9 +33,9 @@ namespace MapAssist.Helpers
     {
         private static string processName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
         public static IntPtr? ProcessHandle = null;
-        public static bool foundcheck = false;
-        public static IntPtr? SaveAddress = null;
-        public static IntPtr? CheckAddress = null;
+        public static bool foundcheck = false; //jokerface fix
+        public static IntPtr? SaveAddress = null; //jokerface fix
+        public static IntPtr? CheckAddress = null; //jokerface fix
 
         public static GameData GetGameData()
         {
@@ -59,12 +59,12 @@ namespace MapAssist.Helpers
                 IntPtr pPlayerUnit = IntPtr.Add(processAddress, Offsets.PlayerUnit);
 
                 var addressBuffer = new byte[8];
-                var addressBuffer1 = new byte[8];
-                var addressBuffer2 = new byte[8];
                 var dwordBuffer = new byte[4];
                 var byteBuffer = new byte[1];
 
-                //QQlol's code fix joker
+                //jokerface fix start
+                var addressBuffer1 = new byte[8];
+                var addressBuffer2 = new byte[8];
                 if (foundcheck == false)
                 {
                     for (int i = 0; i < 128; i++)
@@ -99,6 +99,7 @@ namespace MapAssist.Helpers
 
                 var playerUnit = (IntPtr)SaveAddress;
                 var CheckUnit = (IntPtr)CheckAddress;
+                //jokerface fix end
 
                 WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, CheckUnit, addressBuffer, addressBuffer.Length, out _);
 

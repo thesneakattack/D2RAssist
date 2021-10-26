@@ -162,6 +162,8 @@
       <DependentUpon>Overlay.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Resources\Icon1.ico" />
+    <None Include="Resources\Icon2.ico" />
+    <None Include="Resources\test.json" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -1,4 +1,4 @@
-/**
+﻿/**
  *   Copyright (C) 2021 okaygo
  *
  *   https://github.com/misterokaygo/MapAssist/
