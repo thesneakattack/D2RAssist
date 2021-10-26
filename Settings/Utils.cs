@@ -40,6 +40,7 @@ namespace MapAssist.Settings
         {
             return Enum.GetValues(typeof(Area)).Cast<Area>().FirstOrDefault(area => area.Name() == name);
         }
+
         public static Area[] GetAllAreas()
         {
             return Enum.GetValues(typeof(Area)).Cast<Area>().ToArray();
