@@ -26,6 +26,7 @@ using System.Text;
 using System.IO;
 using System.Security.Cryptography;
 using System.Numerics;
+using System.Collections.Generic;
 
 namespace MapAssist.Helpers
 {
@@ -36,6 +37,8 @@ namespace MapAssist.Helpers
         public static bool foundcheck = false;
         public static IntPtr? SaveAddress = null;
         public static IntPtr? CheckAddress = null;
+        public static IntPtr? processAddress = null;
+        public static UnitFactory unitFactory = null;
 
         public static GameData GetGameData()
         {
@@ -55,8 +58,8 @@ namespace MapAssist.Helpers
                     ProcessHandle =
                         WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
                 }
-                IntPtr processAddress = gameProcess.MainModule.BaseAddress;
-                IntPtr pPlayerUnit = IntPtr.Add(processAddress, Offsets.PlayerUnit);
+                processAddress = gameProcess.MainModule.BaseAddress;
+                IntPtr pPlayerUnit = IntPtr.Add((IntPtr)processAddress, Offsets.PlayerUnit);
 
                 var addressBuffer = new byte[8];
                 var addressBuffer1 = new byte[8];
@@ -179,7 +182,7 @@ namespace MapAssist.Helpers
                     out _);
                 var playerY = BitConverter.ToUInt16(addressBuffer, 0);
 
-                IntPtr uiSettingsPath = IntPtr.Add(processAddress, Offsets.InGameMap);
+                IntPtr uiSettingsPath = IntPtr.Add((IntPtr)processAddress, Offsets.InGameMap);
                 WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, uiSettingsPath, byteBuffer, byteBuffer.Length,
                     out _);
                 var mapShown = BitConverter.ToBoolean(byteBuffer, 0);
@@ -198,6 +201,33 @@ namespace MapAssist.Helpers
             {
                 return null;
             }
+        }
+
+        public static List<Unit> GetUnitData()
+        {
+            if(unitFactory == null)
+            {
+                unitFactory = new UnitFactory((IntPtr) ProcessHandle);
+            }
+            var units = new List<Unit>();
+            var pTableBase = Offsets.UnitHashTable + 0x400; //TODO Fix this, this is just for the monsters..hacky.
+            var addressBuffer = new byte[8];
+
+            for (int i = 0; i <= 127; i++)
+            {
+                var readAddr = IntPtr.Add((IntPtr)processAddress, pTableBase + ((int)i * 8));
+                WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, readAddr, addressBuffer, addressBuffer.Length,
+                    out _);
+
+                var unitPointer = BitConverter.ToInt64(addressBuffer, 0);
+                if(unitPointer == 0)
+                {
+                    continue;
+                }
+
+                units.AddRange(unitFactory.GetUnits((IntPtr)unitPointer));
+            }
+            return units;
         }
     }
 }
