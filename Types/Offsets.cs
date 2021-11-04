@@ -23,5 +23,6 @@ namespace MapAssist.Types
     {
         public static int PlayerUnit = 0x2027660;
         public static int InGameMap = 0x2037322;
+        public static int UnitHashTable = 0x2027660;
     }
 }
