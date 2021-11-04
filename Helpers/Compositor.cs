@@ -45,7 +45,7 @@ namespace MapAssist.Helpers
             (_background, CropOffset) = DrawBackground(areaData, pointOfInterest);
         }
 
-        public Bitmap Compose(GameData gameData, bool scale = true)
+        public Bitmap Compose(GameData gameData, List<Unit> unitList, bool scale = true)
         {
             if (gameData.Area != _areaData.Area)
             {
@@ -66,12 +66,30 @@ namespace MapAssist.Helpers
                     .OffsetFrom(_areaData.Origin)
                     .OffsetFrom(CropOffset)
                     .OffsetFrom(new Point(Settings.Rendering.Player.IconSize, Settings.Rendering.Player.IconSize));
-                
+
+                foreach (Unit u in unitList)
+                {
+                    if(u.mode == 0x0C)
+                    {
+                        //dead?
+                        continue;
+                    }
+                    Point localUnitPosition = u.GetPoint()
+                        .OffsetFrom(_areaData.Origin)
+                        .OffsetFrom(CropOffset)
+                        .OffsetFrom(new Point(Settings.Rendering.Monster.IconSize, Settings.Rendering.Monster.IconSize));
+                    Bitmap monsterIcon = GetIcon(Settings.Rendering.Monster);
+                    imageGraphics.DrawImage(monsterIcon, localUnitPosition);
+
+                }
+
+
                 if (Settings.Rendering.Player.CanDrawIcon())
                 {
                     Bitmap playerIcon = GetIcon(Settings.Rendering.Player);
                     imageGraphics.DrawImage(playerIcon, localPlayerPosition);
                 }
+
 
                 // The lines are dynamic, and follow the player, so have to be drawn here.
                 // The rest can be done in DrawBackground.

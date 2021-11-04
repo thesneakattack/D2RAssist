@@ -26,6 +26,7 @@ using System.Text;
 using System.IO;
 using System.Security.Cryptography;
 using System.Numerics;
+using System.Collections.Generic;
 
 namespace MapAssist.Helpers
 {
@@ -34,6 +35,7 @@ namespace MapAssist.Helpers
         private static string ProcessName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
         private static IntPtr AdrPlayerUnit = IntPtr.Zero;
         private static IntPtr PtrPlayerUnit = IntPtr.Zero;
+        public static UnitFactory unitFactory = null;
 
         public static GameData GetGameData()
         {
@@ -57,6 +59,7 @@ namespace MapAssist.Helpers
                 processHandle =
                     WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
                 IntPtr processAddress = gameProcess.MainModule.BaseAddress;
+
 
                 if (PtrPlayerUnit == IntPtr.Zero)
                 {
@@ -154,6 +157,7 @@ namespace MapAssist.Helpers
                 WindowsExternal.ReadProcessMemory(processHandle, aUiSettingsPath, byteBuffer, byteBuffer.Length, out _);
                 bool mapShown = BitConverter.ToBoolean(byteBuffer, 0);
 
+
                 return new GameData
                 {
                     PlayerPosition = new Point(positionX, positionY),
@@ -175,6 +179,33 @@ namespace MapAssist.Helpers
                     WindowsExternal.CloseHandle(processHandle);
                 }
             }
+        }
+
+        public static List<Unit> GetUnitData()
+        {
+            if(unitFactory == null)
+            {
+                unitFactory = new UnitFactory((IntPtr) ProcessHandle);
+            }
+            var units = new List<Unit>();
+            var pTableBase = Offsets.UnitHashTable + 0x400; //TODO Fix this, this is just for the monsters..hacky.
+            var addressBuffer = new byte[8];
+
+            for (int i = 0; i <= 127; i++)
+            {
+                var readAddr = IntPtr.Add((IntPtr)processAddress, pTableBase + ((int)i * 8));
+                WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, readAddr, addressBuffer, addressBuffer.Length,
+                    out _);
+
+                var unitPointer = BitConverter.ToInt64(addressBuffer, 0);
+                if(unitPointer == 0)
+                {
+                    continue;
+                }
+
+                units.AddRange(unitFactory.GetUnits((IntPtr)unitPointer));
+            }
+            return units;
         }
     }
 }

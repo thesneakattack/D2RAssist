@@ -39,6 +39,7 @@ namespace MapAssist
         private const uint TOPMOST_FLAGS = SWP_NOMOVE | SWP_NOSIZE;
         private readonly Timer _timer = new Timer();
         private GameData _currentGameData;
+        private List<Unit> _unitList;
         private Compositor _compositor;
         private AreaData _areaData;
         private MapApi _mapApi;
@@ -111,8 +112,9 @@ namespace MapAssist
         private void MapUpdateTimer_Tick(object sender, EventArgs e)
         {
             _timer.Stop();
-
             GameData gameData = GameMemory.GetGameData();
+            _unitList = GameMemory.GetUnitData();
+
             if (gameData != null)
             {
                 if (gameData.HasGameChanged(_currentGameData))
@@ -178,7 +180,7 @@ namespace MapAssist
 
             UpdateLocation();
 
-            Bitmap gameMap = _compositor.Compose(_currentGameData, !Settings.Map.OverlayMode);
+            Bitmap gameMap = _compositor.Compose(_currentGameData, _unitList, !Settings.Map.OverlayMode);
 
             if (Settings.Map.OverlayMode)
             {
