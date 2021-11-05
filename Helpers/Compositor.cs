@@ -45,7 +45,7 @@ namespace MapAssist.Helpers
             (_background, CropOffset) = DrawBackground(areaData, pointOfInterest);
         }
 
-        public Bitmap Compose(GameData gameData, bool scale = true)
+        public Bitmap Compose(GameData gameData, List<Unit> unitList, bool scale = true)
         {
             if (gameData.Area != _areaData.Area)
             {
@@ -66,12 +66,30 @@ namespace MapAssist.Helpers
                     .OffsetFrom(_areaData.Origin)
                     .OffsetFrom(CropOffset)
                     .OffsetFrom(new Point(Settings.Rendering.Player.IconSize, Settings.Rendering.Player.IconSize));
-                
+
+                foreach (Unit u in unitList)
+                {
+                    if(u.mode == 0x0C)
+                    {
+                        //dead?
+                        continue;
+                    }
+                    Point localUnitPosition = u.GetPoint()
+                        .OffsetFrom(_areaData.Origin)
+                        .OffsetFrom(CropOffset)
+                        .OffsetFrom(new Point(Settings.Rendering.Monster.IconSize, Settings.Rendering.Monster.IconSize));
+                    Bitmap monsterIcon = GetIcon(Settings.Rendering.Monster);
+                    imageGraphics.DrawImage(monsterIcon, localUnitPosition);
+
+                }
+
+
                 if (Settings.Rendering.Player.CanDrawIcon())
                 {
                     Bitmap playerIcon = GetIcon(Settings.Rendering.Player);
                     imageGraphics.DrawImage(playerIcon, localPlayerPosition);
                 }
+
 
                 // The lines are dynamic, and follow the player, so have to be drawn here.
                 // The rest can be done in DrawBackground.
@@ -188,7 +206,8 @@ namespace MapAssist.Helpers
             (Shape IconShape, int IconSize, Color Color) cacheKey = (poiSettings.IconShape, poiSettings.IconSize, Color: poiSettings.IconColor);
             if (!_iconCache.ContainsKey(cacheKey))
             {
-                var bitmap = new Bitmap(poiSettings.IconSize, poiSettings.IconSize, PixelFormat.Format32bppArgb);
+                //Extra size on the bitmap seems to help with rendering lines into shapes.
+                var bitmap = new Bitmap(poiSettings.IconSize+1, poiSettings.IconSize+1, PixelFormat.Format32bppArgb);
                 using (Graphics g = Graphics.FromImage(bitmap))
                 {
                     g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -201,6 +220,16 @@ namespace MapAssist.Helpers
                         case Shape.Rectangle:
                             g.FillRectangle(new SolidBrush(poiSettings.IconColor), 0, 0, poiSettings.IconSize,
                                 poiSettings.IconSize);
+                            break;
+                        case Shape.X:
+                            var pen = new Pen(poiSettings.IconColor, poiSettings.LineThickness);
+                            g.DrawLine(pen, 0, 0, poiSettings.IconSize, poiSettings.IconSize); //top left to bottom right
+                            g.DrawLine(pen, poiSettings.IconSize, 0, 0, poiSettings.IconSize); //top right to bottom left
+                            break;
+                        case Shape.Plus:
+                            pen = new Pen(poiSettings.IconColor, poiSettings.LineThickness);
+                            g.DrawLine(pen, poiSettings.IconSize/2, 0, poiSettings.IconSize/2, poiSettings.IconSize);
+                            g.DrawLine(pen, 0, poiSettings.IconSize / 2, poiSettings.IconSize , poiSettings.IconSize/2);
                             break;
                     }
                 }

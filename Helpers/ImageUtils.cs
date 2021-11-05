@@ -69,10 +69,12 @@ namespace MapAssist.Helpers
             // Create the Graphics object that does the work
             using (Graphics graphicsObject = Graphics.FromImage(newBitmap))
             {
+
                 graphicsObject.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 graphicsObject.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 graphicsObject.SmoothingMode = SmoothingMode.HighQuality;
 
+                
                 // Fill in the specified background color if necessary
                 if (backgroundColor != Color.Transparent)
                     graphicsObject.Clear(backgroundColor);
@@ -85,6 +87,7 @@ namespace MapAssist.Helpers
 
                 graphicsObject.RotateTransform(angleDegrees);
                 graphicsObject.TranslateTransform(-oldWidth / 2f, -oldHeight / 2f);
+
 
                 // Draw the result
                 graphicsObject.DrawImage(inputImage, 0, 0);
