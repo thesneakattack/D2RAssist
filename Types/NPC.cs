@@ -17,8 +17,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
+using System.Collections.Generic;
 namespace MapAssist.Types
 {
+    public class NPCs
+    {
+        public static HashSet<uint> Dummies = new HashSet<uint> { 149, 151, 152, 153, 157, 158, 159, 195, 196, 197, 179, 185, 203, 204, 205, 268, 269, 271, 272, 293, 294, 296, 318, 319, 320, 321, 322, 323, 324, 325, 332, 338, 339, 344, 355, 359, 370, 377, 378, 392, 393, 401, 414, 711 };
+    }
     public enum Npc
     {
         Skeleton = 0,

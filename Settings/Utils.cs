@@ -86,5 +86,13 @@ namespace MapAssist.Settings
                 LabelFontSize = GetConfigValue($"{name}.LabelFontSize", Convert.ToInt32, 8),
             };
         }
+        public static MobRendering GetMobRendering()
+        {
+            return new MobRendering
+            {
+                NormalColor = GetConfigValue($"MobColor.Normal", ParseColor, Color.Transparent),
+                UniqueColor = GetConfigValue($"MobColor.Unique", ParseColor, Color.Transparent)
+            };
+        }
     }
 }

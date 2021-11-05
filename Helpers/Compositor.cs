@@ -90,6 +90,16 @@ namespace MapAssist.Helpers
                             poi.Position.OffsetFrom(_areaData.Origin).OffsetFrom(CropOffset));
                     }
                 }
+                MobRendering render = Utils.GetMobRendering();
+                foreach (var monster in GameMemory.Monsters)
+                {
+                    Color clr = monster.UniqueFlag == 0 ? render.NormalColor : render.UniqueColor;
+                    Pen pen = new Pen(clr, 1);
+                    Size sz = new Size(5, 5);
+                    Point midPoint = monster.Position.OffsetFrom(_areaData.Origin).OffsetFrom(CropOffset);
+                    Rectangle rect = new Rectangle(midPoint, sz);
+                    imageGraphics.DrawRectangle(pen, rect);
+                }
             }
 
             double multiplier = 1;

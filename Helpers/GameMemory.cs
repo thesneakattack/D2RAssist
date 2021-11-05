@@ -23,6 +23,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Collections.Generic;
 
 using MapAssist.Structs;
 using MapAssist.Types;
@@ -35,6 +36,7 @@ namespace MapAssist.Helpers
         private static IntPtr PlayerUnitPtr;
         private static UnitAny PlayerUnit = default;
         private static int _lastProcessId = 0;
+        public static List<Monster> Monsters = new List<Monster>();
 
         unsafe public static GameData GetGameData()
         {
@@ -73,7 +75,7 @@ namespace MapAssist.Helpers
                     WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
                 IntPtr processAddress = gameProcess.MainModule.BaseAddress;
 
-                if (Equals(PlayerUnit, default(UnitAny)))
+                if (PlayerUnitPtr == IntPtr.Zero)
                 {
                     var unitHashTable = Read<UnitHashTable>(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable));
                     foreach (var pUnitAny in unitHashTable.UnitTable)
@@ -83,11 +85,15 @@ namespace MapAssist.Helpers
                         while (pListNext != IntPtr.Zero)
                         {
                             var unitAny = Read<UnitAny>(processHandle, pListNext);
-                            if (unitAny.OwnerType == 256) // 0x100
+                            if (unitAny.Inventory != IntPtr.Zero)
                             {
-                                PlayerUnitPtr = pUnitAny;
-                                PlayerUnit = unitAny;
-                                break;
+                                var UserBaseCheck = Read<long>(processHandle, IntPtr.Add(unitAny.Inventory, 0x70));
+                                if (UserBaseCheck != 0)
+                                {
+                                    PlayerUnitPtr = pUnitAny;
+                                    PlayerUnit = unitAny;
+                                    break;
+                                }
                             }
                             pListNext = (IntPtr)unitAny.pListNext;
                         }
@@ -144,6 +150,8 @@ namespace MapAssist.Helpers
 
                 var mapShown = Read<UiSettings>(processHandle, IntPtr.Add(processAddress, Offsets.UiSettings)).MapShown;
 
+                Monsters = GetMobs(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable + (128 * 8)));
+
                 return new GameData
                 {
                     PlayerPosition = new Point(positionX, positionY),
@@ -169,7 +177,35 @@ namespace MapAssist.Helpers
                 }
             }
         }
+        unsafe public static List<Monster> GetMobs(IntPtr processHandle, IntPtr startAddress)
+        {
+            var monList = new List<Monster>();
 
+            var unitHashTable = Read<UnitHashTable>(processHandle, startAddress);
+            foreach (var pUnitAny in unitHashTable.UnitTable)
+            {
+                var pListNext = pUnitAny;
+
+                while (pListNext != IntPtr.Zero)
+                {
+                    var unitAny = Read<UnitAny>(processHandle, pListNext);
+                    //why would we ever comment any of our code with anything useful? :D
+                    if (unitAny.Mode != 0 && unitAny.Mode != 12 && !NPCs.Dummies.Contains(unitAny.TxtFileNo))
+                    {
+                        var monPath = Read<Path>(processHandle, (IntPtr)unitAny.pPath);
+                        var flag = Read<uint>(processHandle, IntPtr.Add(unitAny.UnitData, 24));
+                        var newMon = new Monster()
+                        {
+                            Position = new Point(monPath.DynamicX, monPath.DynamicY),
+                            UniqueFlag = flag
+                        };
+                        monList.Add(newMon);
+                    }
+                    pListNext = (IntPtr)unitAny.pListNext;
+                }
+            }
+            return monList;
+        }
         private static void ResetPlayerUnit()
         {
             PlayerUnit = default;
