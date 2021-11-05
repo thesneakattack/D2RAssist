@@ -206,7 +206,8 @@ namespace MapAssist.Helpers
             (Shape IconShape, int IconSize, Color Color) cacheKey = (poiSettings.IconShape, poiSettings.IconSize, Color: poiSettings.IconColor);
             if (!_iconCache.ContainsKey(cacheKey))
             {
-                var bitmap = new Bitmap(poiSettings.IconSize, poiSettings.IconSize, PixelFormat.Format32bppArgb);
+                //Extra size on the bitmap seems to help with rendering lines into shapes.
+                var bitmap = new Bitmap(poiSettings.IconSize+1, poiSettings.IconSize+1, PixelFormat.Format32bppArgb);
                 using (Graphics g = Graphics.FromImage(bitmap))
                 {
                     g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -219,6 +220,16 @@ namespace MapAssist.Helpers
                         case Shape.Rectangle:
                             g.FillRectangle(new SolidBrush(poiSettings.IconColor), 0, 0, poiSettings.IconSize,
                                 poiSettings.IconSize);
+                            break;
+                        case Shape.X:
+                            var pen = new Pen(poiSettings.IconColor, poiSettings.LineThickness);
+                            g.DrawLine(pen, 0, 0, poiSettings.IconSize, poiSettings.IconSize); //top left to bottom right
+                            g.DrawLine(pen, poiSettings.IconSize, 0, 0, poiSettings.IconSize); //top right to bottom left
+                            break;
+                        case Shape.Plus:
+                            pen = new Pen(poiSettings.IconColor, poiSettings.LineThickness);
+                            g.DrawLine(pen, poiSettings.IconSize/2, 0, poiSettings.IconSize/2, poiSettings.IconSize);
+                            g.DrawLine(pen, 0, poiSettings.IconSize / 2, poiSettings.IconSize , poiSettings.IconSize/2);
                             break;
                     }
                 }

@@ -35,6 +35,8 @@ namespace MapAssist.Helpers
         private static string ProcessName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
         private static IntPtr AdrPlayerUnit = IntPtr.Zero;
         private static IntPtr PtrPlayerUnit = IntPtr.Zero;
+        private static IntPtr processHandle = IntPtr.Zero;
+        private static IntPtr processAddress = IntPtr.Zero;
         public static UnitFactory unitFactory = null;
 
         public static GameData GetGameData()
@@ -44,7 +46,6 @@ namespace MapAssist.Helpers
             var byteBuffer = new byte[1];
             var stringBuffer = new byte[16];
 
-            IntPtr processHandle = IntPtr.Zero;
             // Clean up and organize, add better exception handeling.
             try
             {
@@ -58,7 +59,7 @@ namespace MapAssist.Helpers
 
                 processHandle =
                     WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
-                IntPtr processAddress = gameProcess.MainModule.BaseAddress;
+                processAddress = gameProcess.MainModule.BaseAddress;
 
 
                 if (PtrPlayerUnit == IntPtr.Zero)
@@ -176,34 +177,38 @@ namespace MapAssist.Helpers
             {
                 if (processHandle != IntPtr.Zero)
                 {
-                    WindowsExternal.CloseHandle(processHandle);
+                    //WindowsExternal.CloseHandle(processHandle);
                 }
             }
         }
 
         public static List<Unit> GetUnitData()
         {
-            if(unitFactory == null)
+            if (unitFactory == null)
             {
-                unitFactory = new UnitFactory((IntPtr) ProcessHandle);
+                unitFactory = new UnitFactory(processHandle);
             }
+
             var units = new List<Unit>();
             var pTableBase = Offsets.UnitHashTable + 0x400; //TODO Fix this, this is just for the monsters..hacky.
             var addressBuffer = new byte[8];
+            
 
             for (int i = 0; i <= 127; i++)
             {
-                var readAddr = IntPtr.Add((IntPtr)processAddress, pTableBase + ((int)i * 8));
-                WindowsExternal.ReadProcessMemory((IntPtr)ProcessHandle, readAddr, addressBuffer, addressBuffer.Length,
+                var readAddr = IntPtr.Add(processAddress, pTableBase + ((int)i * 8));
+                WindowsExternal.ReadProcessMemory(processHandle, readAddr, addressBuffer, addressBuffer.Length,
                     out _);
 
-                var unitPointer = BitConverter.ToInt64(addressBuffer, 0);
-                if(unitPointer == 0)
+                var unitPointer = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
+                if(unitPointer == IntPtr.Zero)
                 {
                     continue;
                 }
 
-                units.AddRange(unitFactory.GetUnits((IntPtr)unitPointer));
+                
+
+                units.AddRange(unitFactory.GetUnits(unitPointer));
             }
             return units;
         }
