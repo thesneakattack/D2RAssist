@@ -148,7 +148,8 @@ namespace MapAssist.Helpers
                     throw new Exception("Level id out of bounds.");
                 }
 
-                var mapShown = Read<UiSettings>(processHandle, IntPtr.Add(processAddress, Offsets.UiSettings)).MapShown;
+                var mapShownByte = Read<UiSettings>(processHandle, IntPtr.Add(processAddress, Offsets.UiSettings)).MapShown;
+                var mapShown = mapShownByte == 1;
 
                 Monsters = GetMobs(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable + (128 * 8)));
 
