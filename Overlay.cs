@@ -187,6 +187,19 @@ namespace MapAssist
 
             Bitmap gameMap = _compositor.Compose(_currentGameData, !Map.OverlayMode);
 
+            var msgCount = 0;
+            foreach (var warning in GameMemory.WarningMessages)
+            {
+                var fontSize = Map.WarnImmuneNPCFontSize;
+                Font font = _compositor.GetFont(Map.WarnImmuneNPCFont, fontSize);
+                var stringFormat = new StringFormat();
+                stringFormat.Alignment = Map.WarnNPCHorizontalAlign;
+                stringFormat.LineAlignment = Map.WarnNPCVerticalAlign;
+                e.Graphics.DrawString(warning, font,
+                new SolidBrush(Map.WarnNPCFontColor),
+                new Point(Screen.PrimaryScreen.WorkingArea.Width / 2, 10 + (msgCount * (fontSize + fontSize / 2))), stringFormat);
+                msgCount++;
+            }
             if (Map.OverlayMode)
             {
                 float w = 0;
@@ -245,19 +258,6 @@ namespace MapAssist
                     new PointF(p2.X, p2.Y),
                     new PointF(p4.X, p4.Y)
                 };
-                var msgCount = 0;
-                foreach (var warning in GameMemory.WarningMessages)
-                {
-                    var fontSize = Map.WarnImmuneNPCFontSize;
-                    Font font = _compositor.GetFont(Map.WarnImmuneNPCFont, fontSize);
-                    var stringFormat = new StringFormat();
-                    stringFormat.Alignment = Map.WarnNPCHorizontalAlign;
-                    stringFormat.LineAlignment = Map.WarnNPCVerticalAlign;
-                    e.Graphics.DrawString(warning, font,
-                    new SolidBrush(Map.WarnNPCFontColor),
-                    new Point(Screen.PrimaryScreen.WorkingArea.Width / 2, 10 + (msgCount * (fontSize + fontSize / 2))), stringFormat);
-                    msgCount++;
-                }
 
                 e.Graphics.DrawImage(gameMap, destinationPoints);
             }
