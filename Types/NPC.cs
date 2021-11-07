@@ -25,7 +25,7 @@ namespace MapAssist.Types
 {
     public static class NPCs
     {
-        public static HashSet<uint> Dummies = new HashSet<uint> { 149, 151, 152, 153, 157, 158, 159, 195, 196, 197, 179, 185, 203, 204, 205, 268, 269, 271, 272, 293, 294, 296, 318, 319, 320, 321, 322, 323, 324, 325, 332, 338, 339, 344, 355, 359, 370, 377, 378, 392, 393, 401, 414, 711 };
+        public static HashSet<uint> Dummies = new HashSet<uint> { 149, 151, 152, 153, 157, 158, 159, 195, 196, 197, 179, 185, 203, 204, 205, 268, 269, 271, 272, 293, 294, 289, 290, 291, 292, 296, 318, 319, 320, 321, 322, 323, 324, 325, 332, 338, 339, 344, 355, 359, 363, 364, 370, 377, 378, 392, 393, 401, 414, 711 };
 
 
         public static string SuperUniqueName(string npc)
@@ -470,10 +470,10 @@ namespace MapAssist.Types
         DevourerQueen = 286,
         GiantLampreyQueen = 287,
         WorldKillerQueen = 288,
-        ClayGolem = 289,
-        BloodGolem = 290,
-        IronGolem = 291,
-        FireGolem = 292,
+        ClayGolem = 289, //dummy
+        BloodGolem = 290, //dummy
+        IronGolem = 291, //dummy
+        FireGolem = 292, //dummy
         Familiar = 293, // Dummy
         Act3Male = 294, // Dummy
         NightMarauder = 295,
@@ -544,8 +544,8 @@ namespace MapAssist.Types
         Balrog = 360,
         PitLord = 361,
         VenomLord = 362,
-        NecroSkeleton = 363,
-        NecroMage = 364,
+        NecroSkeleton = 363, //dummy
+        NecroMage = 364, //dummy
         Griswold = 365,
         CompellingOrbNpc = 366,
         Tyrael2 = 367,
