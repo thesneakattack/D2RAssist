@@ -109,6 +109,7 @@ namespace MapAssist.Settings
         public static string WarnImmuneNPCFont = Convert.ToString(ConfigurationManager.AppSettings["WarnNPCFont"]);
         public static StringAlignment WarnNPCVerticalAlign = (StringAlignment)Enum.Parse(typeof(StringAlignment), ConfigurationManager.AppSettings["WarnNPCVerticalAlign"]);
         public static StringAlignment WarnNPCHorizontalAlign = (StringAlignment)Enum.Parse(typeof(StringAlignment), ConfigurationManager.AppSettings["WarnNPCHorizontalAlign"]);
+        public static Color WarnNPCFontColor = Utils.ParseColor(Convert.ToString(ConfigurationManager.AppSettings["WarnNPCFontColor"]));
 
         public static bool ClearPrefetchedOnAreaChange =
             Convert.ToBoolean(ConfigurationManager.AppSettings["ClearPrefetchedOnAreaChange"]);

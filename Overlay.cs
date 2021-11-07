@@ -254,7 +254,7 @@ namespace MapAssist
                     stringFormat.Alignment = Map.WarnNPCHorizontalAlign;
                     stringFormat.LineAlignment = Map.WarnNPCVerticalAlign;
                     e.Graphics.DrawString(warning, font,
-                    new SolidBrush(Color.Orange),
+                    new SolidBrush(Map.WarnNPCFontColor),
                     new Point(Screen.PrimaryScreen.WorkingArea.Width / 2, 10 + (msgCount * (fontSize + fontSize / 2))), stringFormat);
                     msgCount++;
                 }
