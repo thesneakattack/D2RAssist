@@ -27,6 +27,7 @@ using System.Collections.Generic;
 
 using MapAssist.Structs;
 using MapAssist.Types;
+using MapAssist.Settings;
 
 namespace MapAssist.Helpers
 {
@@ -37,6 +38,9 @@ namespace MapAssist.Helpers
         private static UnitAny PlayerUnit = default;
         private static int _lastProcessId = 0;
         public static List<Monster> Monsters = new List<Monster>();
+        public static List<string> WarningMessages = new List<string>();
+        private static Difficulty currentDifficulty = Difficulty.None;
+        private static uint currentMapSeed = 0;
 
         unsafe public static GameData GetGameData()
         {
@@ -74,9 +78,16 @@ namespace MapAssist.Helpers
                 processHandle =
                     WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
                 IntPtr processAddress = gameProcess.MainModule.BaseAddress;
-
                 if (PlayerUnitPtr == IntPtr.Zero)
                 {
+                    var expansionCharacter = Read<byte>(processHandle, IntPtr.Add(processAddress, 0x20643B5)) == 1;
+                    var userBaseOffset = 0x30;
+                    var checkUser1 = 1;
+                    if (expansionCharacter)
+                    {
+                        userBaseOffset = 0x70;
+                        checkUser1 = 0;
+                    }
                     var unitHashTable = Read<UnitHashTable>(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable));
                     foreach (var pUnitAny in unitHashTable.UnitTable)
                     {
@@ -87,8 +98,8 @@ namespace MapAssist.Helpers
                             var unitAny = Read<UnitAny>(processHandle, pListNext);
                             if (unitAny.Inventory != IntPtr.Zero)
                             {
-                                var UserBaseCheck = Read<long>(processHandle, IntPtr.Add(unitAny.Inventory, 0x70));
-                                if (UserBaseCheck != 0)
+                                var UserBaseCheck = Read<int>(processHandle, IntPtr.Add(unitAny.Inventory, userBaseOffset));
+                                if (UserBaseCheck != checkUser1)
                                 {
                                     PlayerUnitPtr = pUnitAny;
                                     PlayerUnit = unitAny;
@@ -107,6 +118,8 @@ namespace MapAssist.Helpers
 
                 if (PlayerUnitPtr == IntPtr.Zero)
                 {
+                    currentDifficulty = Difficulty.None;
+                    currentMapSeed = 0;
                     throw new Exception("Player pointer is zero.");
                 }
 
@@ -119,7 +132,12 @@ namespace MapAssist.Helpers
 
                 var playerName = Encoding.ASCII.GetString(Read<byte>(processHandle, PlayerUnit.UnitData, 16)).TrimEnd((char)0);
                 var act = Read<Act>(processHandle, (IntPtr)PlayerUnit.pAct);
-                var mapSeed = act.MapSeed;
+                var mapSeed = (uint)0;
+                if (currentMapSeed == 0)
+                {
+                    currentMapSeed = act.MapSeed;
+                }
+                mapSeed = currentMapSeed;
 
                 if (mapSeed <= 0 || mapSeed > 0xFFFFFFFF)
                 {
@@ -128,7 +146,12 @@ namespace MapAssist.Helpers
 
                 var actId = act.ActId;
                 var actMisc = Read<ActMisc>(processHandle, (IntPtr)act.ActMisc);
-                var gameDifficulty = actMisc.GameDifficulty;
+                var gameDifficulty = Difficulty.None;
+                if(currentDifficulty == Difficulty.None)
+                {
+                    currentDifficulty = actMisc.GameDifficulty;
+                }
+                gameDifficulty = currentDifficulty;
 
                 if (!gameDifficulty.IsValid())
                 {
@@ -151,6 +174,7 @@ namespace MapAssist.Helpers
                 var mapShownByte = Read<UiSettings>(processHandle, IntPtr.Add(processAddress, Offsets.UiSettings)).MapShown;
                 var mapShown = mapShownByte == 1;
 
+                WarningMessages.Clear();
                 Monsters = GetMobs(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable + (128 * 8)));
 
                 return new GameData
@@ -193,19 +217,89 @@ namespace MapAssist.Helpers
                     //why would we ever comment any of our code with anything useful? :D
                     if (unitAny.Mode != 0 && unitAny.Mode != 12 && !NPCs.Dummies.Contains(unitAny.TxtFileNo))
                     {
+
+                        var monData = Read<MonsterData>(processHandle, unitAny.UnitData);
+                        var monStats = Read<MonStats>(processHandle, monData.pMonStats);
+                        var monNameBytes = new byte[monStats.Name.Length - 2];
+                        Array.Copy(monStats.Name, 2, monNameBytes, 0, monNameBytes.Length);
+                        var monName = Encoding.ASCII.GetString(monNameBytes).TrimEnd((char)0);
                         var monPath = Read<Path>(processHandle, (IntPtr)unitAny.pPath);
                         var flag = Read<uint>(processHandle, IntPtr.Add(unitAny.UnitData, 24));
                         var newMon = new Monster()
                         {
                             Position = new Point(monPath.DynamicX, monPath.DynamicY),
-                            UniqueFlag = flag
+                            UniqueFlag = flag,
+                            Immunities = GetImmunes(processHandle, unitAny)
                         };
+                        var NPC = Enum.GetName(typeof(Npc), unitAny.TxtFileNo);
+
+                        var SuperUnique = false;
+                        var NameInWarnList = Array.Exists(Map.WarnImmuneNPC, element => (element == Enum.GetName(typeof(Npc), unitAny.TxtFileNo)));
+                        var NameInWarnList2 = false;
+                        if ((monData.MonsterType & MonsterTypeFlags.SuperUnique) == MonsterTypeFlags.SuperUnique)
+                        {
+                            NPCs.SuperUnique.TryGetValue(monName, out var SuperUniqueName);
+                            SuperUnique = NPCs.SuperUniqueName(monName) == SuperUniqueName;
+                            NameInWarnList2 = Array.Exists(Map.WarnImmuneNPC, element => (element == SuperUniqueName));
+                            if (SuperUnique)
+                            {
+                                NPC = SuperUniqueName;
+                            }
+                        }
+                        if (NameInWarnList || (SuperUnique && NameInWarnList2))
+                        {
+                            var immunestr = "";
+                            foreach(Resist immunity in newMon.Immunities)
+                            {
+                                immunestr += immunity + ", ";
+                            }
+                            if (immunestr.Length > 2)
+                            {
+                                immunestr = immunestr.Remove(immunestr.Length - 2);
+                                WarningMessages.Add(NPC + " is immune to " + immunestr);
+                            }
+                        }
                         monList.Add(newMon);
                     }
                     pListNext = (IntPtr)unitAny.pListNext;
                 }
             }
             return monList;
+        }
+
+        public static Dictionary<Stat, int> GetStats(IntPtr processHandle, UnitAny unit)
+        {
+                var _statListStruct = Read<StatListStruct>(processHandle, unit.StatsListEx);
+                return Read<StatValue>(processHandle, _statListStruct.Stats.FirstStatPtr, Convert.ToInt32(_statListStruct.Stats.Size)).ToDictionary(s => s.Stat, s => s.Value);
+        }
+        public static List<int> GetResists(IntPtr processHandle, UnitAny unit)
+        {
+            var stats = GetStats(processHandle, unit);
+
+            stats.TryGetValue(Stat.STAT_DAMAGERESIST, out var dmgres);
+            stats.TryGetValue(Stat.STAT_MAGICRESIST, out var magicres);
+            stats.TryGetValue(Stat.STAT_FIRERESIST, out var fireres);
+            stats.TryGetValue(Stat.STAT_LIGHTRESIST, out var lightres);
+            stats.TryGetValue(Stat.STAT_COLDRESIST, out var coldres);
+            stats.TryGetValue(Stat.STAT_POISONRESIST, out var poires);
+
+            var _resists = new List<int> { dmgres, magicres, fireres, lightres, coldres, poires };
+
+            return _resists;
+        }
+        public static List<Resist> GetImmunes(IntPtr processHandle, UnitAny unit)
+        {
+            var resists = GetResists(processHandle, unit);
+            var immunities = new List<Resist>();
+            for (var i = 0; i < 6; i++)
+            {
+                if (resists[i] >= 100)
+                {
+                    immunities.Add((Resist)i);
+                }
+            }
+            var _immunes = immunities;
+            return _immunes;
         }
         private static void ResetPlayerUnit()
         {

@@ -27,6 +27,7 @@ using MapAssist.Settings;
 using Gma.System.MouseKeyHook;
 using System.Numerics;
 using System.Configuration;
+using System.Diagnostics;
 
 namespace MapAssist
 {
@@ -119,7 +120,7 @@ namespace MapAssist
 
                 if (gameData.HasMapChanged(_currentGameData))
                 {
-                    Console.WriteLine($"Area changed: {gameData.Area}");
+                    Debug.WriteLine($"Area changed: {gameData.Area}");
                     if (gameData.Area != Area.None)
                     {
                         _areaData = _mapApi.GetMapData(gameData.Area);
@@ -244,6 +245,19 @@ namespace MapAssist
                     new PointF(p2.X, p2.Y),
                     new PointF(p4.X, p4.Y)
                 };
+                var msgCount = 0;
+                foreach (var warning in GameMemory.WarningMessages)
+                {
+                    var fontSize = Map.WarnImmuneNPCFontSize;
+                    Font font = _compositor.GetFont(Map.WarnImmuneNPCFont, fontSize);
+                    var stringFormat = new StringFormat();
+                    stringFormat.Alignment = Map.WarnNPCHorizontalAlign;
+                    stringFormat.LineAlignment = Map.WarnNPCVerticalAlign;
+                    e.Graphics.DrawString(warning, font,
+                    new SolidBrush(Color.Orange),
+                    new Point(Screen.PrimaryScreen.WorkingArea.Width / 2, 10 + (msgCount * (fontSize + fontSize / 2))), stringFormat);
+                    msgCount++;
+                }
 
                 e.Graphics.DrawImage(gameMap, destinationPoints);
             }

@@ -146,6 +146,7 @@
     <Compile Include="Settings\Settings.cs" />
     <Compile Include="Settings\Shape.cs" />
     <Compile Include="Settings\Utils.cs" />
+    <Compile Include="Types\Stats.cs" />
     <EmbeddedResource Include="Overlay.resx">
       <DependentUpon>Overlay.cs</DependentUpon>
     </EmbeddedResource>

@@ -17,15 +17,170 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+
 namespace MapAssist.Types
 {
-    public class NPCs
+    public static class NPCs
     {
         public static HashSet<uint> Dummies = new HashSet<uint> { 149, 151, 152, 153, 157, 158, 159, 195, 196, 197, 179, 185, 203, 204, 205, 268, 269, 271, 272, 293, 294, 296, 318, 319, 320, 321, 322, 323, 324, 325, 332, 338, 339, 344, 355, 359, 370, 377, 378, 392, 393, 401, 414, 711 };
+
+
+        public static string SuperUniqueName(string npc)
+        {
+            SuperUnique.TryGetValue(npc, out var name);
+            return name;
+        }
+        public static string Name(this Npc npc)
+        {
+            return Enum.GetName(typeof(Npc), npc);
+        }
+
+        public readonly static Dictionary<string, string> SuperUniqueFromCode = new Dictionary<string, string>()
+        {
+            { "Bishibosh", "fallenshaman1" },
+            { "Bonebreak", "skeleton1" },
+            { "Coldcrow", "cr_archer1" },
+            { "Rakanishu", "fallen2" },
+            { "Treehead WoodFist", "brute2" },
+            { "Griswold", "griswold" },
+            { "The Countess", "corruptrogue3" },
+            { "Pitspawn Fouldog", "bighead2" },
+            { "Flamespike the Crawler", "quillrat4" },
+            { "Boneash", "skmage_pois3" },
+            { "Radament", "radament" },
+            { "Bloodwitch the Wild", "pantherwoman1" },
+            { "Fangskin", "clawviper3" },
+            { "Beetleburst", "scarab2" },
+            { "Leatherarm", "mummy2" },
+            { "Coldworm the Burrower", "maggotqueen1" },
+            { "Fire Eye", "sandraider3" },
+            { "Dark Elder", "darkelder" },
+            { "The Summoner", "summoner" },
+            { "Ancient Kaa the Soulless", "unraveler3" },
+            { "The Smith", "smith" },
+            { "Web Mage the Burning", "arach4" },
+            { "Witch Doctor Endugu", "fetishshaman4" },
+            { "Stormtree", "thornhulk3" },
+            { "Sarina the Battlemaid", "corruptrogue5" },
+            { "Icehawk Riftwing", "batdemon3" },
+            { "Ismail Vilehand", "councilmember1" },
+            { "Geleb Flamefinger", "councilmember2" },
+            { "Bremm Sparkfist", "councilmember3" },
+            { "Toorc Icefist", "councilmember1" },
+            { "Wyand Voidfinger", "councilmember2" },
+            { "Maffer Dragonhand", "councilmember3" },
+            { "Winged Death", "megademon3" },
+            { "The Tormentor", "willowisp3" },
+            { "Taintbreeder", "vilemother2" },
+            { "Riftwraith the Cannibal", "regurgitator2" },
+            { "Infector of Souls", "megademon3" },
+            { "Lord De Seis", "doomknight3" },
+            { "Grand Vizier of Chaos", "fingermage3" },
+            { "The Cow King", "cowking" },
+            { "Corpsefire", "zombie1" },
+            { "The Feature Creep", "hephasto" },
+            { "Siege Boss", "overseer1" },
+            { "Ancient Barbarian 1", "ancientbarb1" },
+            { "Ancient Barbarian 2", "ancientbarb2" },
+            { "Ancient Barbarian 3", "ancientbarb3" },
+            { "Axe Dweller", "bloodlord3" },
+            { "Bonesaw Breaker", "reanimatedhorde2" },
+            { "Dac Farren", "imp3" },
+            { "Megaflow Rectifier", "minion1" },
+            { "Eyeback Unleashed", "deathmauler1" },
+            { "Threash Socket", "siegebeast3" },
+            { "Pindleskin", "reanimatedhorde5" },
+            { "Snapchip Shatter", "frozenhorror1" },
+            { "Anodized Elite", "succubus4" },
+            { "Vinvear Molech", "succubuswitch2" },
+            { "Sharp Tooth Sayer", "overseer3" },
+            { "Magma Torquer", "imp5" },
+            { "Blaze Ripper", "deathmauler5" },
+            { "Frozenstein", "snowyeti4" },
+            { "Nihlathak Boss", "nihlathakboss" },
+            { "Baal Subject 1", "fallenshaman5" },
+            { "Baal Subject 2", "unraveler5" },
+            { "Baal Subject 3", "baalhighpriest" },
+            { "Baal Subject 4", "venomlord" },
+            { "Baal Subject 5", "baalminion1" },
+        };
+
+        public readonly static Dictionary<string, string> SuperUnique = new Dictionary<string, string>()
+        {
+            { "fallenshaman1", "Bishibosh" },
+            { "skeleton1", "Bonebreak" },
+            { "cr_archer1", "Coldcrow" },
+            { "fallen2", "Rakanishu" },
+            { "brute2", "Treehead WoodFist" },
+            { "griswold", "Griswold" },
+            { "corruptrogue3", "The Countess" },
+            { "bighead2", "Pitspawn Fouldog" },
+            { "quillrat4", "Flamespike the Crawler" },
+            { "skmage_pois3", "Boneash" },
+            { "radament", "Radament" },
+            { "pantherwoman1", "Bloodwitch the Wild" },
+            { "clawviper3", "Fangskin" },
+            { "scarab2", "Beetleburst" },
+            { "mummy2", "Leatherarm" },
+            { "maggotqueen1", "Coldworm the Burrower" },
+            { "sandraider3", "Fire Eye" },
+            { "darkelder", "Dark Elder" },
+            { "summoner", "The Summoner" },
+            { "unraveler3", "Ancient Kaa the Soulless" },
+            { "smith", "The Smith" },
+            { "arach4", "Web Mage the Burning" },
+            { "fetishshaman4", "Witch Doctor Endugu" },
+            { "thornhulk3", "Stormtree" },
+            { "corruptrogue5", "Sarina the Battlemaid" },
+            { "batdemon3", "Icehawk Riftwing" },
+            { "councilmember1", "Ismail Vilehand" },
+            { "councilmember2", "Geleb Flamefinger" },
+            { "councilmember3", "Bremm Sparkfist" },
+            //{ "councilmember1", "Toorc Icefist" },
+            //{ "councilmember2", "Wyand Voidfinger" },
+            //{ "councilmember3", "Maffer Dragonhand" },
+            { "megademon3", "Winged Death" },
+            { "willowisp3", "The Tormentor" },
+            { "vilemother2", "Taintbreeder" },
+            { "regurgitator2", "Riftwraith the Cannibal" },
+            //{ "megademon3", "Infector of Souls" },
+            { "doomknight3", "Lord De Seis" },
+            { "fingermage3", "Grand Vizier of Chaos" },
+            { "cowking", "The Cow King" },
+            { "zombie1", "Corpsefire" },
+            { "hephasto", "The Feature Creep" },
+            { "overseer1", "Siege Boss" },
+            { "ancientbarb1", "Ancient Barbarian 1" },
+            { "ancientbarb2", "Ancient Barbarian 2" },
+            { "ancientbarb3", "Ancient Barbarian 3" },
+            { "bloodlord3", "Axe Dweller" },
+            { "reanimatedhorde2", "Bonesaw Breaker" },
+            { "imp3", "Dac Farren" },
+            { "minion1", "Megaflow Rectifier" },
+            { "deathmauler1", "Eyeback Unleashed" },
+            { "siegebeast3", "Threash Socket" },
+            { "reanimatedhorde5", "Pindleskin" },
+            { "frozenhorror1", "Snapchip Shatter" },
+            { "succubus4", "Anodized Elite" },
+            { "succubuswitch2", "Vinvear Molech" },
+            { "overseer3", "Sharp Tooth Sayer" },
+            { "imp5", "Magma Torquer" },
+            { "deathmauler5", "Blaze Ripper" },
+            { "snowyeti4", "Frozenstein" },
+            { "nihlathakboss", "Nihlathak Boss" },
+            { "fallenshaman5", "Baal Subject 1" },
+            { "unraveler5", "Baal Subject 2" },
+            { "baalhighpriest", "Baal Subject 3" },
+            { "venomlord", "Baal Subject 4" },
+            { "baalminion1", "Baal Subject 5" },
+        };
     }
     public enum Npc
     {
+        None = -1,
         Skeleton = 0,
         Returned = 1,
         BoneWarrior = 2,

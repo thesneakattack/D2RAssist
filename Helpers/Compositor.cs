@@ -93,12 +93,23 @@ namespace MapAssist.Helpers
                 MobRendering render = Utils.GetMobRendering();
                 foreach (var monster in GameMemory.Monsters)
                 {
-                    Color clr = monster.UniqueFlag == 0 ? render.NormalColor : render.UniqueColor;
-                    Pen pen = new Pen(clr, 1);
-                    Size sz = new Size(5, 5);
-                    Point midPoint = monster.Position.OffsetFrom(_areaData.Origin).OffsetFrom(CropOffset);
-                    Rectangle rect = new Rectangle(midPoint, sz);
+                    var clr = monster.UniqueFlag == 0 ? render.NormalColor : render.UniqueColor;
+                    var pen = new Pen(clr, 1);
+                    var sz = new Size(5, 5);
+                    var sz2 = new Size(2, 2);
+                    var midPoint = monster.Position.OffsetFrom(_areaData.Origin).OffsetFrom(CropOffset);
+                    var rect = new Rectangle(midPoint, sz);
                     imageGraphics.DrawRectangle(pen, rect);
+                    var i = 0;
+                    foreach(var immunity in monster.Immunities)
+                    {
+                        var brush = new SolidBrush(ResistColors.ResistColor[immunity]);
+                        var iPoint = new Point((i * -2) + (1 * (monster.Immunities.Count - 1)) - 1, 3);
+                        var pen2 = new Pen(ResistColors.ResistColor[immunity], 1);
+                        var rect2 = new Rectangle(midPoint.OffsetFrom(iPoint), sz2);
+                        imageGraphics.FillRectangle(brush, rect2);
+                        i++;
+                    }
                 }
             }
 
@@ -180,6 +191,18 @@ namespace MapAssist.Helpers
             }
         }
 
+        public Font GetFont(string fontStr, int fontSize)
+        {
+            (string LabelFont, int LabelFontSize) cacheKey = (fontStr, fontSize);
+            if (!_fontCache.ContainsKey(cacheKey))
+            {
+                var font = new Font(fontStr,
+                    fontSize);
+                _fontCache[cacheKey] = font;
+            }
+
+            return _fontCache[cacheKey];
+        }
         private Font GetFont(PointOfInterestRendering poiSettings)
         {
             (string LabelFont, int LabelFontSize) cacheKey = (poiSettings.LabelFont, poiSettings.LabelFontSize);

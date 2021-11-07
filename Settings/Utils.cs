@@ -19,6 +19,7 @@
 
 using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using MapAssist.Types;
@@ -27,6 +28,14 @@ namespace MapAssist.Settings
 {
     public static class Utils
     {
+        public static string[] ParseCommaSeparatedNpcsByName(string npc)
+        {
+            return npc
+                .Split(',')
+                .Select(o => LookupNpcByName(o.Trim()))
+                .Where(o => o != "")
+                .ToArray();
+        }
         public static Area[] ParseCommaSeparatedAreasByName(string areas)
         {
             return areas
@@ -36,6 +45,19 @@ namespace MapAssist.Settings
                 .ToArray();
         }
 
+        private static string LookupNpcByName(string name)
+        {
+            var name2 = "";
+            try
+            {
+                name2 = Enum.GetName(typeof(Npc), name);
+            }
+            catch
+            {
+                return name;
+            }
+            return name2;
+        }
         private static Area LookupAreaByName(string name)
         {
             return Enum.GetValues(typeof(Area)).Cast<Area>().FirstOrDefault(area => area.Name() == name);
