@@ -25,7 +25,7 @@ namespace MapAssist.Types
 {
     public static class NPCs
     {
-        public static HashSet<uint> Dummies = new HashSet<uint> { 149, 151, 152, 153, 157, 158, 159, 195, 196, 197, 179, 185, 203, 204, 205, 268, 269, 271, 272, 293, 294, 289, 290, 291, 292, 296, 318, 319, 320, 321, 322, 323, 324, 325, 332, 338, 339, 344, 355, 359, 363, 364, 370, 377, 378, 392, 393, 401, 414, 711 };
+        public static HashSet<uint> Dummies = new HashSet<uint> { 149, 151, 152, 153, 157, 158, 159, 195, 196, 197, 179, 185, 203, 204, 205, 268, 269, 271, 272, 293, 294, 289, 290, 291, 292, 296, 318, 319, 320, 321, 322, 323, 324, 325, 332, 338, 339, 344, 355, 359, 363, 364, 370, 377, 378, 392, 393, 401, 411, 412, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 711 };
 
 
         public static string SuperUniqueName(string npc)
@@ -594,27 +594,27 @@ namespace MapAssist.Types
 
         // Expansion (Are We missing something here?  D2BS has a 410 that we DONT have)
         WakeOfDestruction = 410,
-        ChargedBoltSentry = 411,
-        LightningSentry = 412,
+        ChargedBoltSentry = 411, //dummy
+        LightningSentry = 412, //dummy
         BladeCreeper = 413,
         InvisiblePet = 414, // Dummy ? Unused ?
-        InfernoSentry = 415,
-        DeathSentry = 416,
-        ShadowWarrior = 417,
-        ShadowMaster = 418,
-        DruidHawk = 419,
-        DruidSpiritWolf = 420,
-        DruidFenris = 421,
-        SpiritOfBarbs = 422,
-        HeartOfWolverine = 423,
-        OakSage = 424,
-        DruidPlaguePoppy = 425,
-        DruidCycleOfLife = 426,
-        VineCreature = 427,
-        DruidBear = 428,
-        Eagle = 429,
-        Wolf = 430,
-        Bear = 431,
+        InfernoSentry = 415, //dummy
+        DeathSentry = 416, //dummy
+        ShadowWarrior = 417, //dummy
+        ShadowMaster = 418, //dummy
+        DruidHawk = 419, //dummy
+        DruidSpiritWolf = 420, //dummy
+        DruidFenris = 421, //dummy
+        SpiritOfBarbs = 422, //dummy
+        HeartOfWolverine = 423, //dummy
+        OakSage = 424, //dummy
+        DruidPlaguePoppy = 425, //dummy
+        DruidCycleOfLife = 426, //dummy
+        VineCreature = 427, //dummy
+        DruidBear = 428, //dummy
+        Eagle = 429, //dummy 
+        Wolf = 430, //dummy
+        Bear = 431, //dummy
         BarricadeDoor = 432,
         BarricadeDoor2 = 433,
         PrisonDoor = 434,
