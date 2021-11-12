@@ -80,7 +80,7 @@ namespace MapAssist.Helpers
                 IntPtr processAddress = gameProcess.MainModule.BaseAddress;
                 if (PlayerUnitPtr == IntPtr.Zero)
                 {
-                    var expansionCharacter = Read<byte>(processHandle, IntPtr.Add(processAddress, 0x20643B5)) == 1;
+                    var expansionCharacter = Read<byte>(processHandle, IntPtr.Add(processAddress, Offsets.ExpansionCheck)) == 1;
                     var userBaseOffset = 0x30;
                     var checkUser1 = 1;
                     if (expansionCharacter)
