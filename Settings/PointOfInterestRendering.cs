@@ -57,4 +57,9 @@ namespace MapAssist.Settings
                    LabelFontSize > 0;
         }
     }
+    public class MobRendering
+    {
+        public Color NormalColor;
+        public Color UniqueColor;
+    }
 }

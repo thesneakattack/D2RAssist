@@ -1,4 +1,4 @@
-﻿/**
+/**
  *   Copyright (C) 2021 okaygo
  *
  *   https://github.com/misterokaygo/MapAssist/
@@ -17,200 +17,322 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  **/
 
-using MapAssist.Types;
 using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.IO;
-using System.Security.Cryptography;
-using System.Numerics;
 using System.Collections.Generic;
+
+using MapAssist.Structs;
+using MapAssist.Types;
+using MapAssist.Settings;
 
 namespace MapAssist.Helpers
 {
     class GameMemory
     {
-        private static string ProcessName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
-        private static IntPtr AdrPlayerUnit = IntPtr.Zero;
-        private static IntPtr PtrPlayerUnit = IntPtr.Zero;
-        private static IntPtr processHandle = IntPtr.Zero;
-        private static IntPtr processAddress = IntPtr.Zero;
-        public static UnitFactory unitFactory = null;
+        private static readonly string ProcessName = Encoding.UTF8.GetString(new byte[] { 68, 50, 82 });
+        private static IntPtr PlayerUnitPtr;
+        private static UnitAny PlayerUnit = default;
+        private static int _lastProcessId = 0;
+        public static List<Monster> Monsters = new List<Monster>();
+        public static List<string> WarningMessages = new List<string>();
+        private static Difficulty currentDifficulty = Difficulty.None;
+        private static uint currentMapSeed = 0;
 
-        public static GameData GetGameData()
+        unsafe public static GameData GetGameData()
         {
-            var addressBuffer = new byte[8];
-            var dwordBuffer = new byte[4];
-            var byteBuffer = new byte[1];
-            var stringBuffer = new byte[16];
+            IntPtr processHandle = IntPtr.Zero;
 
-            // Clean up and organize, add better exception handeling.
             try
             {
                 Process[] process = Process.GetProcessesByName(ProcessName);
-                Process gameProcess = process.Length > 0 ? process[0] : null;
+
+                Process gameProcess = null;
+
+                IntPtr windowInFocus = WindowsExternal.GetForegroundWindow();
+                if (windowInFocus == IntPtr.Zero)
+                {
+                    gameProcess = process.FirstOrDefault();
+                }
+                else
+                {
+                    gameProcess = process.FirstOrDefault(p => p.MainWindowHandle == windowInFocus);
+                }
 
                 if (gameProcess == null)
                 {
                     throw new Exception("Game process not found.");
                 }
 
+                // If changing processes we need to re-find the player
+                if (gameProcess.Id != _lastProcessId)
+                {
+                    ResetPlayerUnit();
+                }
+
+                _lastProcessId = gameProcess.Id;
+
                 processHandle =
                     WindowsExternal.OpenProcess((uint)WindowsExternal.ProcessAccessFlags.VirtualMemoryRead, false, gameProcess.Id);
-                processAddress = gameProcess.MainModule.BaseAddress;
-
-
-                if (PtrPlayerUnit == IntPtr.Zero)
+                IntPtr processAddress = gameProcess.MainModule.BaseAddress;
+                if (PlayerUnitPtr == IntPtr.Zero)
                 {
-                    IntPtr pUnitTable = IntPtr.Add(processAddress, Offsets.UnitTable);
-                    for (var i = 0; i < 128; i++)
+                    var expansionCharacter = Read<byte>(processHandle, IntPtr.Add(processAddress, Offsets.ExpansionCheck)) == 1;
+                    var userBaseOffset = 0x30;
+                    var checkUser1 = 1;
+                    if (expansionCharacter)
                     {
-                        IntPtr pUnit = IntPtr.Add(pUnitTable, i * 8);
-                        WindowsExternal.ReadProcessMemory(processHandle, pUnit, addressBuffer, addressBuffer.Length, out _);
-                        IntPtr aUnit = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
+                        userBaseOffset = 0x70;
+                        checkUser1 = 0;
+                    }
+                    var unitHashTable = Read<UnitHashTable>(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable));
+                    foreach (var pUnitAny in unitHashTable.UnitTable)
+                    {
+                        var pListNext = pUnitAny;
 
-                        if (aUnit != IntPtr.Zero)
+                        while (pListNext != IntPtr.Zero)
                         {
-                            IntPtr aPlayerUnitCheck = IntPtr.Add(aUnit, 0xB8);
-                            WindowsExternal.ReadProcessMemory(processHandle, aPlayerUnitCheck, addressBuffer, addressBuffer.Length, out _);
-                            long playerUnitCheck = BitConverter.ToInt64(addressBuffer, 0);
-                            if (playerUnitCheck == 0x0000000000000100)
+                            var unitAny = Read<UnitAny>(processHandle, pListNext);
+                            if (unitAny.Inventory != IntPtr.Zero)
                             {
-                                AdrPlayerUnit = aUnit;
-                                PtrPlayerUnit = pUnit;
-                                break;
+                                var UserBaseCheck = Read<int>(processHandle, IntPtr.Add(unitAny.Inventory, userBaseOffset));
+                                if (UserBaseCheck != checkUser1)
+                                {
+                                    PlayerUnitPtr = pUnitAny;
+                                    PlayerUnit = unitAny;
+                                    break;
+                                }
                             }
+                            pListNext = (IntPtr)unitAny.pListNext;
+                        }
+
+                        if (PlayerUnitPtr != IntPtr.Zero)
+                        {
+                            break;
                         }
                     }
                 }
 
-                WindowsExternal.ReadProcessMemory(processHandle, PtrPlayerUnit, addressBuffer, addressBuffer.Length, out _);
-                AdrPlayerUnit = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                IntPtr pPlayer = IntPtr.Add(AdrPlayerUnit, 0x10);
-                IntPtr pAct = IntPtr.Add(AdrPlayerUnit, 0x20);
-                IntPtr pPath = IntPtr.Add(AdrPlayerUnit, 0x38);
-
-                if (AdrPlayerUnit == IntPtr.Zero)
+                if (PlayerUnitPtr == IntPtr.Zero)
                 {
-                    PtrPlayerUnit = IntPtr.Zero;
+                    currentDifficulty = Difficulty.None;
+                    currentMapSeed = 0;
                     throw new Exception("Player pointer is zero.");
                 }
 
-                WindowsExternal.ReadProcessMemory(processHandle, pPlayer, addressBuffer, addressBuffer.Length, out _);
-                IntPtr aPlayer = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-
-                WindowsExternal.ReadProcessMemory(processHandle, aPlayer, stringBuffer, stringBuffer.Length, out _);
-                string playerName = Encoding.ASCII.GetString(stringBuffer);
-
-                WindowsExternal.ReadProcessMemory(processHandle, pAct, addressBuffer, addressBuffer.Length, out _);
-                IntPtr aAct = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                IntPtr aMapSeed = IntPtr.Add(aAct, 0x14);
-                IntPtr pActUnk1 = IntPtr.Add(aAct, 0x70);
-
-                WindowsExternal.ReadProcessMemory(processHandle, pActUnk1, addressBuffer, addressBuffer.Length, out _);
-                IntPtr aActUnk2 = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                IntPtr aGameDifficulty = IntPtr.Add(aActUnk2, 0x830);
-
-                WindowsExternal.ReadProcessMemory(processHandle, aGameDifficulty, byteBuffer, byteBuffer.Length, out _);
-                ushort gameDifficulty = byteBuffer[0];
-
-                // IntPtr aDwAct = IntPtr.Add(aAct, 0x20);
-                // WindowsExternal.ReadProcessMemory(processHandle, aDwAct, dwordBuffer, dwordBuffer.Length, out _);
-
-                WindowsExternal.ReadProcessMemory(processHandle, pPath, addressBuffer, addressBuffer.Length, out _);
-                IntPtr aPath = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                IntPtr aPositionX = IntPtr.Add(aPath, 0x02);
-                IntPtr aPositionY = IntPtr.Add(aPath, 0x06);
-                IntPtr pRoom1 = IntPtr.Add(aPath, 0x20);
-
-                WindowsExternal.ReadProcessMemory(processHandle, aPositionX, addressBuffer, addressBuffer.Length, out _);
-                ushort positionX = BitConverter.ToUInt16(addressBuffer, 0);
-
-                WindowsExternal.ReadProcessMemory(processHandle, aPositionY, addressBuffer, addressBuffer.Length, out _);
-                ushort positionY = BitConverter.ToUInt16(addressBuffer, 0);
-
-                WindowsExternal.ReadProcessMemory(processHandle, pRoom1, addressBuffer, addressBuffer.Length, out _);
-                IntPtr aRoom1 = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                IntPtr pRoom2 = IntPtr.Add(aRoom1, 0x18);
-
-                WindowsExternal.ReadProcessMemory(processHandle, pRoom2, addressBuffer, addressBuffer.Length, out _);
-                IntPtr aRoom2 = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                IntPtr pLevel = IntPtr.Add(aRoom2, 0x90);
-
-                WindowsExternal.ReadProcessMemory(processHandle, pLevel, addressBuffer, addressBuffer.Length, out _);
-                IntPtr aLevel = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                IntPtr aLevelId = IntPtr.Add(aLevel, 0x1F8);
-
-                if (aLevel == IntPtr.Zero)
+                /*IntPtr aPlayerUnit = Read<IntPtr>(processHandle, PlayerUnitPtr); 
+    
+                if (aPlayerUnit == IntPtr.Zero)
                 {
-                    throw new Exception("Level address is zero.");
+                    throw new Exception("Player address is zero.");
+                }*/
+
+                var playerName = Encoding.ASCII.GetString(Read<byte>(processHandle, PlayerUnit.UnitData, 16)).TrimEnd((char)0);
+                var act = Read<Act>(processHandle, (IntPtr)PlayerUnit.pAct);
+                var mapSeed = (uint)0;
+                if (currentMapSeed == 0)
+                {
+                    currentMapSeed = act.MapSeed;
                 }
- 
-                WindowsExternal.ReadProcessMemory(processHandle, aLevelId, dwordBuffer, dwordBuffer.Length, out _);
-                uint levelId = BitConverter.ToUInt32(dwordBuffer, 0);
+                mapSeed = currentMapSeed;
 
-                WindowsExternal.ReadProcessMemory(processHandle, aMapSeed, dwordBuffer, dwordBuffer.Length, out _);
-                uint mapSeed = BitConverter.ToUInt32(dwordBuffer, 0);
+                if (mapSeed <= 0 || mapSeed > 0xFFFFFFFF)
+                {
+                    throw new Exception("Map seed is out of bounds.");
+                }
 
-                IntPtr aUiSettingsPath = IntPtr.Add(processAddress, Offsets.InGameMap);
-                WindowsExternal.ReadProcessMemory(processHandle, aUiSettingsPath, byteBuffer, byteBuffer.Length, out _);
-                bool mapShown = BitConverter.ToBoolean(byteBuffer, 0);
+                var actId = act.ActId;
+                var actMisc = Read<ActMisc>(processHandle, (IntPtr)act.ActMisc);
+                var gameDifficulty = Difficulty.None;
+                if(currentDifficulty == Difficulty.None)
+                {
+                    currentDifficulty = actMisc.GameDifficulty;
+                }
+                gameDifficulty = currentDifficulty;
 
+                if (!gameDifficulty.IsValid())
+                {
+                    throw new Exception("Game difficulty out of bounds.");
+                }
+
+                var path = Read<Path>(processHandle, (IntPtr)PlayerUnit.pPath);
+                var positionX = path.DynamicX;
+                var positionY = path.DynamicY;
+                var room = Read<Room>(processHandle, (IntPtr)path.pRoom);
+                var roomEx = Read<RoomEx>(processHandle, (IntPtr)room.pRoomEx);
+                var level = Read<Level>(processHandle, (IntPtr)roomEx.pLevel);
+                var levelId = level.LevelId;
+
+                if (!levelId.IsValid())
+                {
+                    throw new Exception("Level id out of bounds.");
+                }
+
+                var mapShownByte = Read<UiSettings>(processHandle, IntPtr.Add(processAddress, Offsets.UiSettings)).MapShown;
+                var mapShown = mapShownByte == 1;
+
+                WarningMessages.Clear();
+                Monsters = GetMobs(processHandle, IntPtr.Add(processAddress, Offsets.UnitHashTable + (128 * 8)));
 
                 return new GameData
                 {
                     PlayerPosition = new Point(positionX, positionY),
                     MapSeed = mapSeed,
-                    Area = (Area)levelId,
-                    Difficulty = (Difficulty)gameDifficulty,
+                    Area = levelId,
+                    Difficulty = gameDifficulty,
                     MapShown = mapShown,
-                    MainWindowHandle = gameProcess.MainWindowHandle
+                    MainWindowHandle = gameProcess.MainWindowHandle,
+                    PlayerName = playerName
                 };
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Console.WriteLine(exception.Message);
+                ResetPlayerUnit();
                 return null;
             }
             finally
             {
                 if (processHandle != IntPtr.Zero)
                 {
-                    //WindowsExternal.CloseHandle(processHandle);
+                    WindowsExternal.CloseHandle(processHandle);
                 }
             }
         }
-
-        public static List<Unit> GetUnitData()
+        unsafe public static List<Monster> GetMobs(IntPtr processHandle, IntPtr startAddress)
         {
-            if (unitFactory == null)
+            var monList = new List<Monster>();
+
+            var unitHashTable = Read<UnitHashTable>(processHandle, startAddress);
+            foreach (var pUnitAny in unitHashTable.UnitTable)
             {
-                unitFactory = new UnitFactory(processHandle);
-            }
+                var pListNext = pUnitAny;
 
-            var units = new List<Unit>();
-            var pTableBase = Offsets.UnitHashTable + 0x400; //TODO Fix this, this is just for the monsters..hacky.
-            var addressBuffer = new byte[8];
-            
-
-            for (int i = 0; i <= 127; i++)
-            {
-                var readAddr = IntPtr.Add(processAddress, pTableBase + ((int)i * 8));
-                WindowsExternal.ReadProcessMemory(processHandle, readAddr, addressBuffer, addressBuffer.Length,
-                    out _);
-
-                var unitPointer = (IntPtr)BitConverter.ToInt64(addressBuffer, 0);
-                if(unitPointer == IntPtr.Zero)
+                while (pListNext != IntPtr.Zero)
                 {
-                    continue;
+                    var unitAny = Read<UnitAny>(processHandle, pListNext);
+                    //why would we ever comment any of our code with anything useful? :D
+                    if (unitAny.Mode != 0 && unitAny.Mode != 12 && !NPCs.Dummies.TryGetValue(unitAny.TxtFileNo, out var _))
+                    {
+
+                        var monData = Read<MonsterData>(processHandle, unitAny.UnitData);
+                        var monStats = Read<MonStats>(processHandle, monData.pMonStats);
+                        var monNameBytes = new byte[monStats.Name.Length - 2];
+                        Array.Copy(monStats.Name, 2, monNameBytes, 0, monNameBytes.Length);
+                        var monName = Encoding.ASCII.GetString(monNameBytes).TrimEnd((char)0);
+                        var monPath = Read<Path>(processHandle, (IntPtr)unitAny.pPath);
+                        var flag = Read<uint>(processHandle, IntPtr.Add(unitAny.UnitData, 24));
+                        var newMon = new Monster()
+                        {
+                            Position = new Point(monPath.DynamicX, monPath.DynamicY),
+                            UniqueFlag = flag,
+                            Immunities = GetImmunes(processHandle, unitAny)
+                        };
+                        var NPC = Enum.GetName(typeof(Npc), unitAny.TxtFileNo);
+
+                        var SuperUnique = false;
+                        var NameInWarnList = Array.Exists(Map.WarnImmuneNPC, element => (element == Enum.GetName(typeof(Npc), unitAny.TxtFileNo)));
+                        var NameInWarnList2 = false;
+                        if ((monData.MonsterType & MonsterTypeFlags.SuperUnique) == MonsterTypeFlags.SuperUnique)
+                        {
+                            NPCs.SuperUnique.TryGetValue(monName, out var SuperUniqueName);
+                            SuperUnique = NPCs.SuperUniqueName(monName) == SuperUniqueName;
+                            NameInWarnList2 = Array.Exists(Map.WarnImmuneNPC, element => (element == SuperUniqueName));
+                            if (SuperUnique)
+                            {
+                                NPC = SuperUniqueName;
+                            }
+                        }
+                        if (NameInWarnList || (SuperUnique && NameInWarnList2))
+                        {
+                            var immunestr = "";
+                            foreach(Resist immunity in newMon.Immunities)
+                            {
+                                immunestr += immunity + ", ";
+                            }
+                            if (immunestr.Length > 2)
+                            {
+                                immunestr = immunestr.Remove(immunestr.Length - 2);
+                                WarningMessages.Add(NPC + " is immune to " + immunestr);
+                            }
+                        }
+                        monList.Add(newMon);
+                    }
+                    pListNext = (IntPtr)unitAny.pListNext;
+                }
+            }
+            return monList;
+        }
+
+        public static Dictionary<Stat, int> GetStats(IntPtr processHandle, UnitAny unit)
+        {
+                var _statListStruct = Read<StatListStruct>(processHandle, unit.StatsListEx);
+                return Read<StatValue>(processHandle, _statListStruct.Stats.FirstStatPtr, Convert.ToInt32(_statListStruct.Stats.Size)).ToDictionary(s => s.Stat, s => s.Value);
+        }
+        public static List<int> GetResists(IntPtr processHandle, UnitAny unit)
+        {
+            var stats = GetStats(processHandle, unit);
+
+            stats.TryGetValue(Stat.STAT_DAMAGERESIST, out var dmgres);
+            stats.TryGetValue(Stat.STAT_MAGICRESIST, out var magicres);
+            stats.TryGetValue(Stat.STAT_FIRERESIST, out var fireres);
+            stats.TryGetValue(Stat.STAT_LIGHTRESIST, out var lightres);
+            stats.TryGetValue(Stat.STAT_COLDRESIST, out var coldres);
+            stats.TryGetValue(Stat.STAT_POISONRESIST, out var poires);
+
+            var _resists = new List<int> { dmgres, magicres, fireres, lightres, coldres, poires };
+
+            return _resists;
+        }
+        public static List<Resist> GetImmunes(IntPtr processHandle, UnitAny unit)
+        {
+            var resists = GetResists(processHandle, unit);
+            var immunities = new List<Resist>();
+            for (var i = 0; i < 6; i++)
+            {
+                if (resists[i] >= 100)
+                {
+                    immunities.Add((Resist)i);
+                }
+            }
+            var _immunes = immunities;
+            return _immunes;
+        }
+        private static void ResetPlayerUnit()
+        {
+            PlayerUnit = default;
+            PlayerUnitPtr = IntPtr.Zero;
+        }
+
+        public static T[] Read<T>(IntPtr processHandle, IntPtr address, int count) where T : struct
+        {
+            var sz = Marshal.SizeOf<T>();
+            var buf = new byte[sz * count];
+            WindowsExternal.ReadProcessMemory(processHandle, address, buf, buf.Length, out _);
+
+            var handle = GCHandle.Alloc(buf, GCHandleType.Pinned);
+            try
+            {
+                var result = new T[count];
+                for (var i = 0; i < count; i++)
+                {
+                    result[i] = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject() + (i * sz), typeof(T));
                 }
 
-                
-
-                units.AddRange(unitFactory.GetUnits(unitPointer));
+                return result;
             }
-            return units;
+            finally
+            {
+                handle.Free();
+            }
+        }
+
+        public static T Read<T>(IntPtr processHandle, IntPtr address) where T : struct
+        {
+            return Read<T>(processHandle, address, 1)[0];
         }
     }
 }

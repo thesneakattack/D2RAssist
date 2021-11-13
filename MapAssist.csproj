@@ -90,9 +90,6 @@
   <PropertyGroup>
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyName>b9e0c2e6-f50d-40fe-a04c-4e1ae21bcd62</AssemblyName>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -110,7 +107,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Helpers\UnitFactory.cs" />
     <Compile Include="Overlay.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -123,6 +119,16 @@
     <Compile Include="Helpers\MapApi.cs" />
     <Compile Include="Helpers\Compositor.cs" />
     <Compile Include="Helpers\WindowsExternal.cs" />
+    <Compile Include="Structs\Act.cs" />
+    <Compile Include="Structs\Monster.cs" />
+    <Compile Include="Structs\UiSettings.cs" />
+    <Compile Include="Structs\Level.cs" />
+    <Compile Include="Structs\Path.cs" />
+    <Compile Include="Structs\Room.cs" />
+    <Compile Include="Structs\RoomEx.cs" />
+    <Compile Include="Structs\UnitAny.cs" />
+    <Compile Include="Structs\ActMisc.cs" />
+    <Compile Include="Structs\UnitHashTable.cs" />
     <Compile Include="Types\Area.cs" />
     <Compile Include="Types\Difficulty.cs" />
     <Compile Include="Types\GameData.cs" />
@@ -140,15 +146,11 @@
     <Compile Include="Settings\Settings.cs" />
     <Compile Include="Settings\Shape.cs" />
     <Compile Include="Settings\Utils.cs" />
-    <Compile Include="Types\Unit.cs" />
-    <Compile Include="Types\UnitData.cs" />
-    <Compile Include="Types\UnitHashTable.cs" />
+    <Compile Include="Types\Stats.cs" />
     <EmbeddedResource Include="Overlay.resx">
       <DependentUpon>Overlay.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Resources\Icon1.ico" />
-    <None Include="Resources\Icon2.ico" />
-    <None Include="Resources\test.json" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -173,5 +175,6 @@
       <Version>13.0.1</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
